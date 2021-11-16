@@ -23,6 +23,9 @@
 /* Fixme : This information should be obtained from modem. */
 #define CELLULAR_PDN_CONTEXT_TYPE                  CELLULAR_PDN_CONTEXT_IPV4
 
+#ifndef UNREFERENCED_PARAMETER
+    #define UNREFERENCED_PARAMETER( x ) ( void ) x
+#endif
 
 /*-----------------------------------------------------------*/
 

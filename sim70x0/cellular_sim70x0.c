@@ -87,22 +87,17 @@ static CellularError_t sendAtCommandWithRetryTimeout( CellularContext_t * pConte
     CellularError_t cellularStatus = CELLULAR_SUCCESS;
     CellularPktStatus_t pktStatus = CELLULAR_PKT_STATUS_OK;
     uint8_t tryCount = 0;
+    
+    /* pContext and pAtReq is checked in the caller function. */
 
-    if( pAtReq == NULL )
+    for( ; tryCount < ENBABLE_MODULE_UE_RETRY_COUNT; tryCount++ )
     {
-        cellularStatus = CELLULAR_BAD_PARAMETER;
-    }
-    else
-    {
-        for( ; tryCount < ENBABLE_MODULE_UE_RETRY_COUNT; tryCount++ )
+        pktStatus = _Cellular_TimeoutAtcmdRequestWithCallback( pContext, *pAtReq, ENBABLE_MODULE_UE_RETRY_TIMEOUT );
+        cellularStatus = _Cellular_TranslatePktStatus( pktStatus );
+
+        if( cellularStatus == CELLULAR_SUCCESS )
         {
-            pktStatus = _Cellular_TimeoutAtcmdRequestWithCallback( pContext, *pAtReq, ENBABLE_MODULE_UE_RETRY_TIMEOUT );
-            cellularStatus = _Cellular_TranslatePktStatus( pktStatus );
-
-            if( cellularStatus == CELLULAR_SUCCESS )
-            {
-                break;
-            }
+            break;
         }
     }
 
@@ -409,14 +404,6 @@ CellularError_t Cellular_ModuleEnableUE( CellularContext_t * pContext )
     atReqGetWithResult.atCmdType = CELLULAR_AT_WITH_PREFIX;
     atReqGetWithResult.respCallback = set_PDP_range_cb;
     cellularStatus = _Cellular_AtcmdRequestWithCallback( pContext, atReqGetWithResult );
-
-    #if 0
-        atReqGetNoResult.pAtCmd = "AT+CACLOSE=0,0";
-        _Cellular_AtcmdRequestWithCallback( pContext, atReqGetWithResult );
-
-        atReqGetNoResult.pAtCmd = "AT+CNACT=0,0";
-        _Cellular_AtcmdRequestWithCallback( pContext, atReqGetWithResult );
-    #endif // 0
 
     return cellularStatus;
 }
