@@ -3,7 +3,7 @@
 This repository contains FreeRTOS-Cellular-Interface module ports supported by FreeRTOS community members.
 Follow the steps below to contribute a FreeRTOS-Cellular-Interface module port to this repository:
 
-1. Write FreeRTOS-Cellular-Interface module port for your Compiler and Architecture.
+1. Write FreeRTOS-Cellular-Interface module port for your cellular module.
 2. Add a README file with the following information:
     1. How to use this port?
     2. Any other relevant information.
