@@ -917,7 +917,7 @@ static CellularATError_t getPdnStatusParseToken( char * pToken,
 
         default:
             LogError( ( "Unknown token in getPdnStatusParseToken %s %d",
-                              pToken, tokenIndex ) );
+                        pToken, tokenIndex ) );
             atCoreStatus = CELLULAR_AT_ERROR;
             break;
     }
@@ -980,7 +980,7 @@ static CellularATError_t getPdnStatusParseLine( char * pRespLine,
         else
         {
             LogDebug( ( "getPdnStatusParseToken buffer(%u) is too small, ContextId=%u.",
-                              nBuf, pdnStatus.contextId ) );
+                        nBuf, pdnStatus.contextId ) );
             atCoreStatus = CELLULAR_AT_ERROR;
         }
     }
@@ -1025,16 +1025,18 @@ static CellularPktStatus_t _Cellular_RecvFuncGetPdnStatus( CellularContext_t * p
     else
     {
         pPdnStatusArray = ( CellularPdnStatus_t * ) pData;
+
         /* Initialize all the PdnStatus to invalid. */
         for( i = 0U; i < dataLen; i++ )
         {
-            pPdnStatusArray[i].contextId = INVALID_PDN_INDEX;
+            pPdnStatusArray[ i ].contextId = INVALID_PDN_INDEX;
         }
 
         i = 0U;
+
         for( pItem = pAtResp->pItm; pItem != NULL; pItem = pItem->pNext )
         {
-            atCoreStatus = getPdnStatusParseLine( pItem->pLine, &pPdnStatusArray[i] );
+            atCoreStatus = getPdnStatusParseLine( pItem->pLine, &pPdnStatusArray[ i ] );
             pktStatus = _Cellular_TranslateAtCoreStatus( atCoreStatus );
 
             if( pktStatus != CELLULAR_PKT_STATUS_OK )
@@ -1042,6 +1044,7 @@ static CellularPktStatus_t _Cellular_RecvFuncGetPdnStatus( CellularContext_t * p
                 LogError( ( "getPdnStatusParseLine parse %s failed", pItem->pLine ) );
                 break;
             }
+
             i = i + 1U;
         }
     }
@@ -1095,7 +1098,7 @@ static CellularATError_t getDataFromResp( const CellularATCommandResponse_t * pA
     if( *pDataRecv->pDataLen > outBufSize )
     {
         LogError( ( "Data is turncated, received data length %d, out buffer size %d",
-                          *pDataRecv->pDataLen, outBufSize ) );
+                    *pDataRecv->pDataLen, outBufSize ) );
         dataLenToCopy = outBufSize;
         *pDataRecv->pDataLen = outBufSize;
     }
@@ -1544,11 +1547,11 @@ static CellularPktStatus_t _Cellular_RecvFuncGetPsmSettings( CellularContext_t *
         }
 
         LogDebug( ( "PSM setting: mode: %d, RAU: %d, RDY_Timer: %d, TAU: %d, Active_time: %d",
-                          pPsmSettings->mode,
-                          pPsmSettings->periodicRauValue,
-                          pPsmSettings->gprsReadyTimer,
-                          pPsmSettings->periodicTauValue,
-                          pPsmSettings->activeTimeValue ) );
+                    pPsmSettings->mode,
+                    pPsmSettings->periodicRauValue,
+                    pPsmSettings->gprsReadyTimer,
+                    pPsmSettings->periodicTauValue,
+                    pPsmSettings->activeTimeValue ) );
         pktStatus = _Cellular_TranslateAtCoreStatus( atCoreStatus );
     }
 
@@ -1717,13 +1720,13 @@ static CellularError_t storeAccessModeAndAddress( CellularContext_t * pContext,
     else if( socketHandle->socketState != SOCKETSTATE_ALLOCATED )
     {
         LogError( ( "storeAccessModeAndAddress, bad socket state %d",
-                          socketHandle->socketState ) );
+                    socketHandle->socketState ) );
         cellularStatus = CELLULAR_INTERNAL_FAILURE;
     }
     else if( dataAccessMode != CELLULAR_ACCESSMODE_BUFFER )
     {
         LogError( ( "storeAccessModeAndAddress, Access mode not supported %d",
-                          dataAccessMode ) );
+                    dataAccessMode ) );
         cellularStatus = CELLULAR_UNSUPPORTED;
     }
     else
@@ -2616,7 +2619,7 @@ CellularError_t Cellular_SocketConnect( CellularHandle_t cellularHandle,
         if( pktStatus != CELLULAR_PKT_STATUS_OK )
         {
             LogError( ( "Cellular_SocketConnect: Socket connect failed, cmd:%s, PktRet: %d",
-                              cmdBuf, pktStatus ) );
+                        cmdBuf, pktStatus ) );
 
             /* recovery a already opened socket.    */
             snprintf( cmdBuf, sizeof( cmdBuf ), "AT+CACLOSE=%d", socketHandle->socketId );
@@ -2723,7 +2726,7 @@ CellularError_t Cellular_GetSimCardStatus( CellularHandle_t cellularHandle,
 
         cellularStatus = _Cellular_TranslatePktStatus( pktStatus );
         LogDebug( ( "_Cellular_GetSimStatus, Sim Insert State[%d], Lock State[%d]",
-                          pSimCardStatus->simCardState, pSimCardStatus->simCardLockState ) );
+                    pSimCardStatus->simCardState, pSimCardStatus->simCardLockState ) );
     }
 
     return cellularStatus;
@@ -2800,8 +2803,8 @@ CellularError_t Cellular_GetSimCardInfo( CellularHandle_t cellularHandle,
         else
         {
             LogDebug( ( "SimInfo updated: IMSI:%s, Hplmn:%s%s, ICCID:%s",
-                              pSimCardInfo->imsi, pSimCardInfo->plmn.mcc, pSimCardInfo->plmn.mnc,
-                              pSimCardInfo->iccid ) );
+                        pSimCardInfo->imsi, pSimCardInfo->plmn.mcc, pSimCardInfo->plmn.mnc,
+                        pSimCardInfo->iccid ) );
         }
     }
 
@@ -2931,8 +2934,8 @@ CellularError_t Cellular_GetHostByName( CellularHandle_t cellularHandle,
 
 /*-----------------------------------------------------------*/
 
-CellularError_t Cellular_Init(CellularHandle_t* pCellularHandle,
-    const CellularCommInterface_t* pCommInterface)
+CellularError_t Cellular_Init( CellularHandle_t * pCellularHandle,
+                               const CellularCommInterface_t * pCommInterface )
 {
     CellularTokenTable_t cellularTokenTable = { 0 };
 
@@ -2951,4 +2954,3 @@ CellularError_t Cellular_Init(CellularHandle_t* pCellularHandle,
 }
 
 /*-----------------------------------------------------------*/
-

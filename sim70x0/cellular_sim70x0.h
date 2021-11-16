@@ -24,7 +24,7 @@
 #define CELLULAR_PDN_CONTEXT_TYPE                  CELLULAR_PDN_CONTEXT_IPV4
 
 #ifndef UNREFERENCED_PARAMETER
-    #define UNREFERENCED_PARAMETER( x ) ( void ) x
+    #define UNREFERENCED_PARAMETER( x )    ( void ) x
 #endif
 
 /*-----------------------------------------------------------*/
@@ -80,13 +80,13 @@ typedef struct cellularModuleContext
 extern CellularAtParseTokenMap_t CellularUrcHandlerTable[];
 extern uint32_t CellularUrcHandlerTableSize;
 
-extern const char* CellularSrcTokenErrorTable[];
+extern const char * CellularSrcTokenErrorTable[];
 extern uint32_t CellularSrcTokenErrorTableSize;
 
-extern const char* CellularSrcTokenSuccessTable[];
+extern const char * CellularSrcTokenSuccessTable[];
 extern uint32_t CellularSrcTokenSuccessTableSize;
 
-extern const char* CellularUrcTokenWoPrefixTable[];
+extern const char * CellularUrcTokenWoPrefixTable[];
 extern uint32_t CellularUrcTokenWoPrefixTableSize;
 
 /*-----------------------------------------------------------*/
@@ -94,10 +94,9 @@ extern uint32_t CellularUrcTokenWoPrefixTableSize;
 BOOL IsValidCID( int cid );
 BOOL IsValidPDP( int pdp );
 
-CellularPktStatus_t _Cellular_ParseSimstat(char* pInputStr,
-    CellularSimCardStatus_t* pSimState);
+CellularPktStatus_t _Cellular_ParseSimstat( char * pInputStr,
+                                            CellularSimCardStatus_t * pSimState );
 
 /*-----------------------------------------------------------*/
 
 #endif /* ifndef __CELLULAR_SIM70XX_H__ */
-

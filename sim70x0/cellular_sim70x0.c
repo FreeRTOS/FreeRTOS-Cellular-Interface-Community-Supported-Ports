@@ -87,7 +87,7 @@ static CellularError_t sendAtCommandWithRetryTimeout( CellularContext_t * pConte
     CellularError_t cellularStatus = CELLULAR_SUCCESS;
     CellularPktStatus_t pktStatus = CELLULAR_PKT_STATUS_OK;
     uint8_t tryCount = 0;
-    
+
     /* pContext and pAtReq is checked in the caller function. */
 
     for( ; tryCount < ENBABLE_MODULE_UE_RETRY_COUNT; tryCount++ )
@@ -248,8 +248,8 @@ static CellularPktStatus_t set_PDP_range_cb( CellularContext_t * pContext,
             return CELLULAR_AT_SUCCESS;
         }
         else if( ( ( pB1 = strchr( pLine, '<' ) ) != NULL ) &&
-            ( ( pE1 = strchr( pLine, '-' ) ) != NULL ) &&
-            ( ( pE2 = strchr( pLine, '>' ) ) != NULL ) )
+                 ( ( pE1 = strchr( pLine, '-' ) ) != NULL ) &&
+                 ( ( pE2 = strchr( pLine, '>' ) ) != NULL ) )
         {
             memset( ns, 0, sizeof( ns ) );
             strncpy( ns, pB1, pE1 - pB1 );
