@@ -10,7 +10,7 @@ You can reference the demos in [FreeRTOS repository](https://github.com/FreeRTOS
 ## SIM7080 specific config
 
 Besides the configurations described in the [cellular interface document](https://www.freertos.org/cellular-demo.html#configure-cellular), SIM7080 cellular module porting needs the following extra configs.
-|
+
 | Configuration   |      Description      |  Value |
 |-----------------|-----------------------|--------|
 | CELLULAR_PDN_CONTEXT_ID_MIN | The minimum PDN context ID | 0 |
