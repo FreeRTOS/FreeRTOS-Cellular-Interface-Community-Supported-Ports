@@ -1,17 +1,14 @@
-## My Project
+## FreeRTOS-Cellular-Interface Community Supported Ports
 
-TODO: Fill this README out!
+This repository contains FreeRTOS-Cellular-Interface module ports supported by FreeRTOS community members.
+Follow the steps below to contribute a FreeRTOS-Cellular-Interface module port to this repository:
 
-Be sure to:
-
-* Change the title in this README
-* Edit your repository description on GitHub
-
-## Security
-
-See [CONTRIBUTING](CONTRIBUTING.md#security-issue-notifications) for more information.
+1. Write FreeRTOS-Cellular-Interface module port for your cellular module.
+2. Add a README file with the following information:
+    1. How to use this port?
+    2. Any other relevant information.
+3. Raise a pull request to merge the port.
 
 ## License
 
-This library is licensed under the MIT-0 License. See the LICENSE file.
-
+This repository contains multiple directories, each individually licensed. Please see the LICENSE file in each directory.
