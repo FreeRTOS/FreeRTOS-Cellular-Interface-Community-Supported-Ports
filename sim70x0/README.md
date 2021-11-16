@@ -142,7 +142,6 @@ extern void vLoggingPrintf( const char * pcFormatString,
     ( ( ( ( int32_t ) isalpha( ( ( int8_t ) ( inputChar ) ) ) ) == 0 ) && \
       ( ( ( int32_t ) isdigit( ( ( int8_t ) ( inputChar ) ) ) ) == 0 ) && \
       ( ( inputChar ) != '+' ) && ( ( inputChar ) != '_' ) && ( ( inputChar ) != ' ' ) )
-```
 
 #endif /* __CELLULAR_CONFIG_H__ */
-
+```
