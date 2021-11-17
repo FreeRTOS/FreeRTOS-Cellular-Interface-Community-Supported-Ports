@@ -183,6 +183,13 @@ static CellularPktStatus_t set_CID_range_cb( CellularContext_t * pContext,
                                              void * pData,
                                              uint16_t dataLen )
 {
+    char ns[ 8 ] = { 0 };
+    char * pLine = NULL;
+    char * pB1 = NULL;
+    char * pE1 = NULL;
+    char * pB2 = NULL;
+    char * pE2 = NULL;
+
     UNREFERENCED_PARAMETER( pContext );
     UNREFERENCED_PARAMETER( pData );
     UNREFERENCED_PARAMETER( dataLen );
@@ -190,9 +197,7 @@ static CellularPktStatus_t set_CID_range_cb( CellularContext_t * pContext,
     if( ( pAtResp != NULL ) && ( pAtResp->pItm != NULL ) && ( pAtResp->pItm->pLine != NULL ) )
     {
         /* Handling: +CACID:(0-12)   */
-        char ns[ 8 ];
-        char * pLine = pAtResp->pItm->pLine;
-        char * pB1, * pE1, * pB2, * pE2;
+        pLine = pAtResp->pItm->pLine;
 
         if( ( ( pB1 = strchr( pLine, '(' ) ) != NULL ) &&
             ( ( pE1 = strchr( pLine, '-' ) ) != NULL ) &&
@@ -220,6 +225,13 @@ static CellularPktStatus_t set_PDP_range_cb( CellularContext_t * pContext,
                                              void * pData,
                                              uint16_t dataLen )
 {
+    char ns[ 8 ] = { 0 };
+    char * pLine = NULL;
+    char * pB1 = NULL;
+    char * pE1 = NULL;
+    char * pB2 = NULL;
+    char * pE2 = NULL;
+
     UNREFERENCED_PARAMETER( pContext );
     UNREFERENCED_PARAMETER( pData );
     UNREFERENCED_PARAMETER( dataLen );
@@ -227,9 +239,7 @@ static CellularPktStatus_t set_PDP_range_cb( CellularContext_t * pContext,
     if( ( pAtResp != NULL ) && ( pAtResp->pItm != NULL ) && ( pAtResp->pItm->pLine != NULL ) )
     {
         /*Handling: +CNACT:(0-3),(0-2)  */
-        char ns[ 8 ];
-        char * pLine = pAtResp->pItm->pLine;
-        char * pB1, * pE1, * pB2, * pE2;
+        pLine = pAtResp->pItm->pLine;
 
         if( ( ( pB1 = strchr( pLine, '(' ) ) != NULL ) &&
             ( ( pE1 = strchr( pLine, '-' ) ) != NULL ) &&
