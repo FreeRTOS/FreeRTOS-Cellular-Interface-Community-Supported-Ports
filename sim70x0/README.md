@@ -115,7 +115,7 @@ extern void vLoggingPrintf( const char * pcFormatString,
 /*
  * PDN context id for cellular network.
  */
-#define CELLULAR_PDN_CONTEXT_ID         ( CELLULAR_PDN_CONTEXT_ID_MIN )
+#define CELLULAR_PDN_CONTEXT_ID         ( 1U )
 
 /*
  * PDN connect timeout for network registration.
