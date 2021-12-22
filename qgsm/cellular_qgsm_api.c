@@ -96,6 +96,7 @@
 #define DEFAULT_FOREGROUND_CONTEXT               ( 0U )   /* The Default value for foreground context (the range is 0-1) */
 
 #define USE_OPERATION_MODE                       ( 1U )   /* Select the operation mode of the modem: 1 for client; 2 for server*/
+#define MAX_TOKEN_BUFFER                         ( 14U )
 /*-----------------------------------------------------------*/
 
 /**
@@ -2114,6 +2115,7 @@ CellularError_t Cellular_SocketClose( CellularHandle_t cellularHandle,
                                       CellularSocketHandle_t socketHandle )
 {
     CellularContext_t * pContext = ( CellularContext_t * ) cellularHandle;
+    CellularSocketContext_t * pSockContext = ( CellularSocketContext_t * ) socketHandle;
     CellularError_t cellularStatus = CELLULAR_SUCCESS;
     CellularPktStatus_t pktStatus = CELLULAR_PKT_STATUS_OK;
     char cmdBuf[ CELLULAR_AT_CMD_TYPICAL_MAX_SIZE ] = { '\0' };
@@ -2126,6 +2128,11 @@ CellularError_t Cellular_SocketClose( CellularHandle_t cellularHandle,
         NULL,
         0,
     };
+    char tokenBuf[ MAX_TOKEN_BUFFER ] = { 0 };
+    char * successTokenTable[ 1 ] = { tokenBuf };
+
+    snprintf( tokenBuf, MAX_TOKEN_BUFFER, "%u, CLOSE OK", pSockContext->socketId );
+    successTokenTable[ 0 ] = tokenBuf;
 
     /* Make sure the library is open. */
     cellularStatus = _Cellular_CheckLibraryStatus( pContext );
@@ -2149,11 +2156,26 @@ CellularError_t Cellular_SocketClose( CellularHandle_t cellularHandle,
             /* The return value of snprintf is not used.
              * The max length of the string is fixed and checked offline. */
             /* coverity[misra_c_2012_rule_21_6_violation]. */
-            ( void ) snprintf( cmdBuf, CELLULAR_AT_CMD_TYPICAL_MAX_SIZE, "%s%ld%s", "AT+QICLOSE=", socketHandle->socketId, ";+QICLOSE=?" );
-            pktStatus = _Cellular_TimeoutAtcmdRequestWithCallback( pContext, atReqSockClose,
-                                                                   SOCKET_DISCONNECT_PACKET_REQ_TIMEOUT_MS );
+            ( void ) snprintf( cmdBuf, CELLULAR_AT_CMD_TYPICAL_MAX_SIZE, "%s%ld", "AT+QICLOSE=", socketHandle->socketId );
+            pktStatus = _Cellular_AtcmdRequestSuccessToken( pContext, atReqSockClose,
+                                                            SOCKET_DISCONNECT_PACKET_REQ_TIMEOUT_MS, successTokenTable, 1U );
 
-            if( pktStatus != CELLULAR_PKT_STATUS_OK )
+            if( pktStatus == CELLULAR_PKT_STATUS_OK )
+            {
+                pSockContext->socketState = SOCKETSTATE_DISCONNECTED;
+                LogInfo( "Socket closed. Conn Id %d", pSockContext->socketId );
+
+                /* Indicate the upper layer about the socket close. */
+                if( pSockContext->closedCallback != NULL )
+                {
+                    pSockContext->closedCallback( pSockContext, pSockContext->pClosedCallbackContext );
+                }
+                else
+                {
+                    LogInfo( "Cellular_SocketClose: Socket close callback not set!!" );
+                }
+            }
+            else
             {
                 LogError( "Cellular_SocketClose: Socket close failed, cmdBuf:%s, PktRet: %d", cmdBuf, pktStatus );
             }
