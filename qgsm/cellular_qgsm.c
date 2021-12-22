@@ -43,6 +43,8 @@
 
 static CellularError_t sendAtCommandWithRetryTimeout( CellularContext_t * pContext,
                                                       const CellularAtReq_t * pAtReq );
+static CellularPktStatus_t prvUndefinedRespHandler( CellularContext_t * pContext,
+                                                    const char * pLine );
 
 /*-----------------------------------------------------------*/
 
@@ -59,7 +61,7 @@ uint32_t CellularSrcTokenErrorTableSize = sizeof( CellularSrcTokenErrorTable ) /
 /* FreeRTOS Cellular Common Library porting interface. */
 /* coverity[misra_c_2012_rule_8_7_violation] */
 const char * CellularSrcTokenSuccessTable[] =
-{ "OK", "CONNECT OK", "SEND OK", ">", "0, CLOSE OK" };
+{ "OK", "SEND OK", ">" };
 /* FreeRTOS Cellular Common Library porting interface. */
 /* coverity[misra_c_2012_rule_8_7_violation] */
 uint32_t CellularSrcTokenSuccessTableSize = sizeof( CellularSrcTokenSuccessTable ) / sizeof( char * );
@@ -101,7 +103,44 @@ static CellularError_t sendAtCommandWithRetryTimeout( CellularContext_t * pConte
 
     return cellularStatus;
 }
+/*-----------------------------------------------------------*/
 
+/*Handle QIOPEN Response, for example "<socket_index>, CONNECT OK" or "<socket_index>, CONNECT FAIL" */
+static CellularPktStatus_t prvUndefinedRespHandler( CellularContext_t * pContext,
+                                                    const char * pLine )
+{
+    CellularError_t cellularStatus = CELLULAR_SUCCESS;
+    CellularPktStatus_t pktStatus = CELLULAR_PKT_STATUS_OK;
+    bool inputWithConnectPrefix = false;
+    const char * pLinetmp = pLine;
+
+    LogInfo( ( "prvUndefinedRespHandler : input line %s", pLine ) );
+
+    pLinetmp = pLinetmp++;
+
+    if( pLinetmp[ 0 ] == ',' )
+    {
+        /* Skip the socket index and check the event */
+        pLinetmp = ( const char * ) pLine + 3;
+
+        /* Check if CONNECT prefix exist in pLine. */
+        cellularStatus = Cellular_ATStrStartWith( pLinetmp, "CONNECT", &inputWithConnectPrefix );
+    }
+
+    if( inputWithConnectPrefix )
+    {
+        _Cellular_ProcessSocketOpen( pContext, pLinetmp );
+        pktStatus = CELLULAR_PKT_STATUS_OK;
+    }
+    else
+    {
+        /* Unknown command. */
+        LogDebug( ( "Unknown command %s", pLine ) );
+        pktStatus = CELLULAR_PKT_STATUS_FAILURE;
+    }
+
+    return pktStatus;
+}
 /*-----------------------------------------------------------*/
 
 /* FreeRTOS Cellular Common Library porting interface. */
@@ -147,6 +186,11 @@ CellularError_t Cellular_ModuleInit( const CellularContext_t * pContext,
                 *ppModuleContext = ( void * ) &cellularqgsmContext;
             }
         }
+    }
+
+    if( cellularStatus == CELLULAR_SUCCESS )
+    {
+        cellularStatus = _Cellular_RegisterUndefinedRespCallback( pContext, prvUndefinedRespHandler, pContext );
     }
 
     return cellularStatus;

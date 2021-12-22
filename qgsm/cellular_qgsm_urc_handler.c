@@ -44,19 +44,12 @@ static void _Cellular_ProcessPowerDown( CellularContext_t * pContext,
                                         char * pInputLine );
 static void _Cellular_ProcessModemRdy( CellularContext_t * pContext,
                                        char * pInputLine );
-static void _Cellular_ProcessSocketOpen( CellularContext_t * pContext,
-                                         char * pInputLine );
-static void _Cellular_ProcessSocketurc( CellularContext_t * pContext,
-                                        char * pInputLine );
 static void _Cellular_ProcessSimstat( CellularContext_t * pContext,
                                       char * pInputLine );
 static void _Cellular_ProcessIndication( CellularContext_t * pContext,
                                          char * pInputLine );
 static CellularPktStatus_t _parseSocketUrcRecv( const CellularContext_t * pContext,
                                                 char * pUrcStr );
-
-static CellularPktStatus_t _parseSocketUrcClosed( const CellularContext_t * pContext,
-                                                  char * pUrcStr );
 
 
 /*-----------------------------------------------------------*/
@@ -67,12 +60,9 @@ static CellularPktStatus_t _parseSocketUrcClosed( const CellularContext_t * pCon
 CellularAtParseTokenMap_t CellularUrcHandlerTable[] =
 {
     { "CGREG",             Cellular_CommonUrcProcessCgreg },
-    { "CLOSE OK",          _parseSocketUrcClosed          },
-    { "CONNECT OK",        _Cellular_ProcessSocketOpen    },
     { "CREG",              Cellular_CommonUrcProcessCreg  },
     { "NORMAL POWER DOWN", _Cellular_ProcessPowerDown     },
     { "QIRDI",             _parseSocketUrcRecv            },
-    { "QIURC",             _Cellular_ProcessSocketurc     },
     { "QSIMSTAT",          _Cellular_ProcessSimstat       },
     { "RDY",               _Cellular_ProcessModemRdy      }
 };
@@ -88,19 +78,20 @@ static CellularPktStatus_t _parseSocketOpenNextTok( const char * pToken,
                                                     uint32_t sockIndex,
                                                     CellularSocketContext_t * pSocketData )
 {
-    int32_t sockStatus = 0;
+    bool sockConnected = false;
     CellularATError_t atCoreStatus = CELLULAR_AT_SUCCESS;
     CellularPktStatus_t pktStatus = CELLULAR_PKT_STATUS_OK;
 
     if( atCoreStatus == CELLULAR_AT_SUCCESS )
     {
-        if( strcmp( pToken, "CONNECTOK" ) != 0 )
+        if( strcmp( pToken, "CONNECT OK" ) != 0 )
         {
             pSocketData->socketState = SOCKETSTATE_DISCONNECTED;
-            LogError( "_parseSocketOpen: Socket open failed, conn %d, status %d", sockIndex, sockStatus );
+            LogError( "_parseSocketOpen: Socket open failed, conn %d", sockIndex );
         }
         else
         {
+            sockConnected = true;
             pSocketData->socketState = SOCKETSTATE_CONNECTED;
             LogDebug( "_parseSocketOpen: Socket open success, conn %d", sockIndex );
         }
@@ -108,7 +99,7 @@ static CellularPktStatus_t _parseSocketOpenNextTok( const char * pToken,
         /* Indicate the upper layer about the socket open status. */
         if( pSocketData->openCallback != NULL )
         {
-            if( sockStatus != 0 )
+            if( !sockConnected )
             {
                 pSocketData->openCallback( CELLULAR_URC_SOCKET_OPEN_FAILED,
                                            pSocketData, pSocketData->pOpenCallbackContext );
@@ -133,17 +124,17 @@ static CellularPktStatus_t _parseSocketOpenNextTok( const char * pToken,
 
 /* Cellular common prototype. */
 /* coverity[misra_c_2012_rule_8_13_violation] */
-static void _Cellular_ProcessSocketOpen( CellularContext_t * pContext,
-                                         char * pInputLine )
+void _Cellular_ProcessSocketOpen( CellularContext_t * pContext,
+                                  char * pInputLine )
 {
     CellularPktStatus_t pktStatus = CELLULAR_PKT_STATUS_OK;
     CellularATError_t atCoreStatus = CELLULAR_AT_SUCCESS;
-    char * pRespLine = NULL;
     char * pUrcStr = NULL, * pToken = NULL;
     uint32_t sockIndex = 0;
     int32_t tempValue = 0;
     CellularSocketContext_t * pSocketData = NULL;
 
+    pUrcStr = pInputLine;
 
     if( pContext == NULL )
     {
@@ -151,19 +142,9 @@ static void _Cellular_ProcessSocketOpen( CellularContext_t * pContext,
     }
     else
     {
-        pRespLine = pInputLine - 2;
-
-        /* Removing all the Spaces in the AT Response. */
-        atCoreStatus = Cellular_ATRemoveAllWhiteSpaces( pRespLine );
-
         if( atCoreStatus == CELLULAR_AT_SUCCESS )
         {
-            atCoreStatus = Cellular_ATGetNextTok( &pRespLine, &pToken );
-        }
-
-        if( atCoreStatus == CELLULAR_AT_SUCCESS )
-        {
-            atCoreStatus = Cellular_ATStrtoi( pToken, 10, &tempValue );
+            atCoreStatus = Cellular_ATStrtoi( pUrcStr - 3, 10, &tempValue );
         }
 
         if( atCoreStatus == CELLULAR_AT_SUCCESS )
@@ -186,12 +167,7 @@ static void _Cellular_ProcessSocketOpen( CellularContext_t * pContext,
 
             if( pSocketData != NULL )
             {
-                atCoreStatus = Cellular_ATGetNextTok( &pRespLine, &pToken );
-
-                if( atCoreStatus == CELLULAR_AT_SUCCESS )
-                {
-                    pktStatus = _parseSocketOpenNextTok( pToken, sockIndex, pSocketData );
-                }
+                pktStatus = _parseSocketOpenNextTok( pInputLine, sockIndex, pSocketData );
             }
             else
             {
@@ -390,72 +366,6 @@ static CellularPktStatus_t _parseSocketUrcRecv( const CellularContext_t * pConte
 
 /*-----------------------------------------------------------*/
 
-static CellularPktStatus_t _parseSocketUrcClosed( const CellularContext_t * pContext,
-                                                  char * pUrcStr )
-{
-    char * pToken = NULL;
-    char * pLocalUrcStr = pUrcStr - 2;
-    int32_t tempValue = 0;
-    uint32_t sockIndex = 0;
-    CellularSocketContext_t * pSocketData = NULL;
-    CellularATError_t atCoreStatus = CELLULAR_AT_SUCCESS;
-    CellularPktStatus_t pktStatus = CELLULAR_PKT_STATUS_OK;
-
-    atCoreStatus = Cellular_ATGetNextTok( &pLocalUrcStr, &pToken );
-
-    if( atCoreStatus == CELLULAR_AT_SUCCESS )
-    {
-        atCoreStatus = Cellular_ATStrtoi( pToken, 10, &tempValue );
-    }
-
-    if( atCoreStatus == CELLULAR_AT_SUCCESS )
-    {
-        if( tempValue < ( int32_t ) CELLULAR_NUM_SOCKET_MAX )
-        {
-            sockIndex = ( uint32_t ) tempValue;
-        }
-        else
-        {
-            LogError( "Error in processing Socket Index. Token %s", pToken );
-            atCoreStatus = CELLULAR_AT_ERROR;
-        }
-    }
-
-    if( atCoreStatus == CELLULAR_AT_SUCCESS )
-    {
-        pSocketData = _Cellular_GetSocketData( pContext, sockIndex );
-
-        if( pSocketData != NULL )
-        {
-            pSocketData->socketState = SOCKETSTATE_DISCONNECTED;
-            LogDebug( "Socket closed. Conn Id %d", sockIndex );
-
-            /* Indicate the upper layer about the socket close. */
-            if( pSocketData->closedCallback != NULL )
-            {
-                pSocketData->closedCallback( pSocketData, pSocketData->pClosedCallbackContext );
-            }
-            else
-            {
-                LogInfo( "_parseSocketUrc: Socket close callback not set!!" );
-            }
-        }
-        else
-        {
-            atCoreStatus = CELLULAR_AT_ERROR;
-        }
-    }
-
-    if( atCoreStatus != CELLULAR_AT_SUCCESS )
-    {
-        pktStatus = _Cellular_TranslateAtCoreStatus( atCoreStatus );
-    }
-
-    return pktStatus;
-}
-
-/*-----------------------------------------------------------*/
-
 static CellularPktStatus_t _parseSocketUrcAct( const CellularContext_t * pContext,
                                                char * pUrcStr )
 {
@@ -544,82 +454,6 @@ static CellularPktStatus_t _parseSocketUrcDns( const CellularContext_t * pContex
     }
 
     return pktStatus;
-}
-
-/*-----------------------------------------------------------*/
-
-/* Cellular common prototype. */
-/* coverity[misra_c_2012_rule_8_13_violation] */
-static void _Cellular_ProcessSocketurc( CellularContext_t * pContext,
-                                        char * pInputLine )
-{
-    char * pUrcStr = NULL, * pToken = NULL;
-    CellularPktStatus_t pktStatus = CELLULAR_PKT_STATUS_OK;
-    CellularATError_t atCoreStatus = CELLULAR_AT_SUCCESS;
-
-    if( pContext == NULL )
-    {
-        pktStatus = CELLULAR_PKT_STATUS_INVALID_HANDLE;
-    }
-    else if( pInputLine == NULL )
-    {
-        pktStatus = CELLULAR_PKT_STATUS_BAD_PARAM;
-    }
-    else
-    {
-        pUrcStr = pInputLine;
-        atCoreStatus = Cellular_ATRemoveAllDoubleQuote( pUrcStr );
-
-        if( atCoreStatus == CELLULAR_AT_SUCCESS )
-        {
-            atCoreStatus = Cellular_ATRemoveLeadingWhiteSpaces( &pUrcStr );
-        }
-
-        if( atCoreStatus == CELLULAR_AT_SUCCESS )
-        {
-            atCoreStatus = Cellular_ATGetNextTok( &pUrcStr, &pToken );
-        }
-
-        if( atCoreStatus == CELLULAR_AT_SUCCESS )
-        {
-            /* Check if this is a data receive indication. */
-
-            /* this whole if as a function and return pktstatus
-             * take iotat_getnexttok inside
-             * convert atcore status to pktstatus. */
-
-/*            if( strstr( pToken, "RECEIVE" ) != NULL )
- *          {
- *              pktStatus = _parseSocketUrcRecv( pContext, pUrcStr );
- *          }else*/
-            if( strcmp( pToken, "closed" ) == 0 )
-            {
-                pktStatus = _parseSocketUrcClosed( pContext, pUrcStr );
-            }
-            else if( strcmp( pToken, "pdpdeact" ) == 0 )
-            {
-                pktStatus = _parseSocketUrcAct( pContext, pUrcStr );
-            }
-            else if( strcmp( pToken, "dnsgip" ) == 0 )
-            {
-                pktStatus = _parseSocketUrcDns( pContext, pUrcStr );
-            }
-            else
-            {
-                /* Empty else MISRA 15.7 */
-            }
-        }
-
-        if( atCoreStatus != CELLULAR_AT_SUCCESS )
-        {
-            pktStatus = _Cellular_TranslateAtCoreStatus( atCoreStatus );
-        }
-    }
-
-    if( pktStatus != CELLULAR_PKT_STATUS_OK )
-    {
-        LogDebug( "Socketurc Parse failure" );
-    }
 }
 
 /*-----------------------------------------------------------*/

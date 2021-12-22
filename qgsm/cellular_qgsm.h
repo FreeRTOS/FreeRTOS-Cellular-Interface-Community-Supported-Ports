@@ -54,4 +54,19 @@ typedef struct cellularModuleContext
 CellularPktStatus_t _Cellular_ParseSimstat( char * pInputStr,
                                             CellularSimCardState_t * pSimState );
 
+void _Cellular_ProcessSocketOpen( CellularContext_t * pContext,
+                                  char * pInputLine );
+/**
+ *
+ * @brief Cellular module TCPIP enable function.
+ *
+ * This function start the TCPIP task.
+ *
+ * @param[in,out] pContext FreeRTOS Cellular Library context created in Cellular_Init.
+ *
+ * @return CELLULAR_SUCCESS if the operation is successful, otherwise an error
+ * code indicating the cause of the error.
+ */
+CellularError_t Cellular_StartTCPIP( CellularContext_t * pContext );
+
 #endif /* ifndef __CELLULAR_qgsm_H__ */
