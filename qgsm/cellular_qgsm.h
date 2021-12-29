@@ -51,11 +51,28 @@ typedef struct cellularModuleContext
     /* coverity[misra_c_2012_rule_1_1_violation]. */
 } cellularModuleContext_t;
 
+/*-----------------------------------------------------------*/
+
+extern CellularAtParseTokenMap_t CellularUrcHandlerTable[];
+extern uint32_t CellularUrcHandlerTableSize;
+
+extern const char * CellularSrcTokenErrorTable[];
+extern uint32_t CellularSrcTokenErrorTableSize;
+
+extern const char * CellularSrcTokenSuccessTable[];
+extern uint32_t CellularSrcTokenSuccessTableSize;
+
+extern const char * CellularUrcTokenWoPrefixTable[];
+extern uint32_t CellularUrcTokenWoPrefixTableSize;
+
+/*-----------------------------------------------------------*/
+
 CellularPktStatus_t _Cellular_ParseSimstat( char * pInputStr,
                                             CellularSimCardState_t * pSimState );
 
 void _Cellular_ProcessSocketOpen( CellularContext_t * pContext,
                                   char * pInputLine );
+
 /**
  *
  * @brief Cellular module TCPIP enable function.
