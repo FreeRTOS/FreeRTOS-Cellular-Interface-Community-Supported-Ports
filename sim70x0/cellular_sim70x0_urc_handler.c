@@ -25,7 +25,6 @@
 
 #include "cellular_config.h"
 #include "cellular_config_defaults.h"
-#include "cellular_common_internal.h"
 
 /* Standard includes. */
 #include <stdlib.h>
@@ -753,10 +752,14 @@ static void _Cellular_ProcessSocketDataInd( CellularContext_t * pContext,
     {
         if( pSocketData->dataMode == CELLULAR_ACCESSMODE_BUFFER )
         {
+            cellularModuleContext_t * pSimContext = NULL;
+
             /* Data received indication in buffer mode, need to fetch the data. */
             LogDebug( ( "Data Received on socket Conn Id %d", socketId ) );
-            cellularModuleContext_t * pSimContex = ( cellularModuleContext_t * ) pContext->pModueContext;
-            xEventGroupSetBits( pSimContex->pdnEvent, CNACT_EVENT_BIT_IND );
+
+            /* pContext is checked before. */
+            ( void ) _Cellular_GetModuleContext( pContext, ( void ** ) &pSimContext );
+            xEventGroupSetBits( pSimContext->pdnEvent, CNACT_EVENT_BIT_IND );
 
             _informDataReadyToUpperLayer( pSocketData );
         }
@@ -923,7 +926,8 @@ static void _Cellular_ProcessPdnStatus( CellularContext_t * pContext,
         goto err2;
     }
 
-    pSimContext = ( cellularModuleContext_t * ) pContext->pModueContext;
+    /* pContext is checked before. */
+    ( void ) _Cellular_GetModuleContext( pContext, ( void ** ) &pSimContext );
 
     if( pSimContext == NULL )
     {
