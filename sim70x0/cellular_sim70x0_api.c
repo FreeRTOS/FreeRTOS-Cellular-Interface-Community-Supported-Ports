@@ -32,7 +32,6 @@
 #include "cellular_platform.h"
 #include "cellular_config.h"
 #include "cellular_config_defaults.h"
-#include "cellular_common_internal.h"
 
 #include "cellular_types.h"
 #include "cellular_api.h"
@@ -1193,8 +1192,12 @@ static CellularPktStatus_t _Cellular_RecvFuncData( CellularContext_t * pContext,
                 if( nRecvCnt == 0 )
                 {
                     /* all data received, next AT+CARECV need +CADATAIND: */
-                    cellularModuleContext_t * pSimContex = ( cellularModuleContext_t * ) pContext->pModueContext;
-                    xEventGroupClearBits( pSimContex->pdnEvent, CNACT_EVENT_BIT_IND );
+                    cellularModuleContext_t * pSimContext = NULL;
+
+                    /* pContext is checked before. */
+                    ( void ) _Cellular_GetModuleContext( pContext, ( void ** ) &pSimContext );
+
+                    xEventGroupClearBits( pSimContext->pdnEvent, CNACT_EVENT_BIT_IND );
                 }
             }
             else
@@ -1637,9 +1640,14 @@ static CellularPktStatus_t socketRecvDataPrefix( void * pCallbackContext,
 
         if( strcmp( pPrefix, "+CARECV:0" ) == 0 )
         {
+            cellularModuleContext_t * pSimContext = NULL;
+
             LogDebug( ( "%s recieved. no more data", pPrefix ) );
-            cellularModuleContext_t * pSimContex = ( cellularModuleContext_t * ) pContext->pModueContext;
-            xEventGroupClearBits( pSimContex->pdnEvent, CNACT_EVENT_BIT_IND ); /* recv data empty, need wait +CADATAIND: */
+
+            /* pContext is checked before. */
+            ( void ) _Cellular_GetModuleContext( pContext, ( void ** ) &pSimContext );
+
+            xEventGroupClearBits( pSimContext->pdnEvent, CNACT_EVENT_BIT_IND ); /* recv data empty, need wait +CADATAIND: */
             pktStatus = CELLULAR_PKT_STATUS_OK;
             continue;
         }
@@ -2101,6 +2109,7 @@ CellularError_t Cellular_ActivatePdn( CellularHandle_t cellularHandle,
     CellularPktStatus_t pktStatus = CELLULAR_PKT_STATUS_OK;
 
     char cmdBuf[ CELLULAR_AT_CMD_TYPICAL_MAX_SIZE * 2 ] = { '\0' }; /* APN & auth info is too long ...*/
+    cellularModuleContext_t * pSimContext = NULL;
 
     CellularAtReq_t atReqActPdn =
     {
@@ -2126,28 +2135,29 @@ CellularError_t Cellular_ActivatePdn( CellularHandle_t cellularHandle,
         goto err;
     }
 
-    cellularModuleContext_t * pSimContex = ( cellularModuleContext_t * ) pContext->pModueContext;
+    /* pContext is checked before. */
+    ( void ) _Cellular_GetModuleContext( pContext, ( void ** ) &pSimContext );
 
-    if( pSimContex == NULL )
+    if( pSimContext == NULL )
     {
         goto err;
     }
 
-    if( pSimContex->pdnCfg.password && ( strlen( pSimContex->pdnCfg.password ) > 0 ) &&
-        pSimContex->pdnCfg.username && ( strlen( pSimContex->pdnCfg.username ) > 0 ) &&
-        ( pSimContex->pdnCfg.pdnAuthType > 0 ) )
+    if( pSimContext->pdnCfg.password && ( strlen( pSimContext->pdnCfg.password ) > 0 ) &&
+        pSimContext->pdnCfg.username && ( strlen( pSimContext->pdnCfg.username ) > 0 ) &&
+        ( pSimContext->pdnCfg.pdnAuthType > 0 ) )
     {
         ( void ) snprintf( cmdBuf, sizeof( cmdBuf ), "AT+CNCFG=%d,%d,\"%s\",\"%s\",\"%s\",%d",
                            contextId,
                            0, /* 0=Dual Stack, 1=IPV4, 2=IPV6*/
-                           pSimContex->pdnCfg.apnName, pSimContex->pdnCfg.username, pSimContex->pdnCfg.password, pSimContex->pdnCfg.pdnAuthType );
+                           pSimContext->pdnCfg.apnName, pSimContext->pdnCfg.username, pSimContext->pdnCfg.password, pSimContext->pdnCfg.pdnAuthType );
     }
     else
     {
         ( void ) snprintf( cmdBuf, sizeof( cmdBuf ), "AT+CNCFG=%d,%d,\"%s\"",
                            contextId,
                            0, /* 0=Dual Stack, 1=IPV4, 2=IPV6*/
-                           pSimContex->pdnCfg.apnName );
+                           pSimContext->pdnCfg.apnName );
     }
 
     pktStatus = _Cellular_AtcmdRequestWithCallback( pContext, atReqActPdn );
@@ -2160,7 +2170,7 @@ CellularError_t Cellular_ActivatePdn( CellularHandle_t cellularHandle,
 
     if( cellularStatus == CELLULAR_SUCCESS )
     {
-        xEventGroupClearBits( pSimContex->pdnEvent, CNACT_EVENT_BIT_ACT );
+        xEventGroupClearBits( pSimContext->pdnEvent, CNACT_EVENT_BIT_ACT );
         ( void ) snprintf( cmdBuf, sizeof( cmdBuf ), "AT+CNACT=%d,1", contextId );
 
         pktStatus = _Cellular_TimeoutAtcmdRequestWithCallback( pContext, atReqActPdn, PDN_ACTIVATION_PACKET_REQ_TIMEOUT_MS );
@@ -2169,7 +2179,7 @@ CellularError_t Cellular_ActivatePdn( CellularHandle_t cellularHandle,
         {
             LogDebug( ( "Cellular module wait Pdn-%d ...", contextId ) );
 
-            xEventGroupWaitBits( pSimContex->pdnEvent, CNACT_EVENT_BIT_ACT, true, false,
+            xEventGroupWaitBits( pSimContext->pdnEvent, CNACT_EVENT_BIT_ACT, true, false,
                                  pdMS_TO_TICKS( PDN_ACTIVATION_PACKET_REQ_TIMEOUT_MS ) );
 
             LogInfo( ( "Cellular module wait Pdn-%d ready", contextId ) );
@@ -2197,6 +2207,8 @@ CellularError_t Cellular_SetPdnConfig( CellularHandle_t cellularHandle,
     CellularPktStatus_t pktStatus = CELLULAR_PKT_STATUS_OK;
 
     char cmdBuf[ CELLULAR_AT_CMD_MAX_SIZE * 2 ] = { '\0' }; /* APN and auth info is too long */
+
+    cellularModuleContext_t * pSimContext = NULL;
 
     CellularAtReq_t atReqSetPdn =
     {
@@ -2264,8 +2276,10 @@ CellularError_t Cellular_SetPdnConfig( CellularHandle_t cellularHandle,
                                pPdnConfig->username );
         }
 
-        cellularModuleContext_t * pSimContex = ( cellularModuleContext_t * ) pContext->pModueContext;
-        memcpy( &pSimContex->pdnCfg, pPdnConfig, sizeof( CellularPdnConfig_t ) );
+        /* pContext is checked before. */
+        ( void ) _Cellular_GetModuleContext( pContext, ( void ** ) &pSimContext );
+
+        memcpy( &pSimContext->pdnCfg, pPdnConfig, sizeof( CellularPdnConfig_t ) );
 
         pktStatus = _Cellular_AtcmdRequestWithCallback( pContext, atReqSetPdn );
 
@@ -2362,6 +2376,8 @@ CellularError_t Cellular_SocketRecv( CellularHandle_t cellularHandle,
         bufferLength,
     };
 
+    cellularModuleContext_t * pSimContext = NULL;
+
     cellularStatus = _Cellular_CheckLibraryStatus( pContext );
 
     if( cellularStatus != CELLULAR_SUCCESS )
@@ -2393,8 +2409,10 @@ CellularError_t Cellular_SocketRecv( CellularHandle_t cellularHandle,
 
         LogDebug( ( "Cellular module wait +CDATAIND: %d ...", socketHandle->socketId ) );
 
-        cellularModuleContext_t * pSimContex = ( cellularModuleContext_t * ) pContext->pModueContext;
-        xEventGroupWaitBits( pSimContex->pdnEvent, CNACT_EVENT_BIT_IND, false, false,
+        /* pContext is checked before. */
+        ( void ) _Cellular_GetModuleContext( pContext, ( void ** ) &pSimContext );
+
+        xEventGroupWaitBits( pSimContext->pdnEvent, CNACT_EVENT_BIT_IND, false, false,
                              pdMS_TO_TICKS( PDN_ACTIVATION_PACKET_REQ_TIMEOUT_MS ) );
 
         /* Form the AT command. */
@@ -2611,8 +2629,12 @@ CellularError_t Cellular_SocketConnect( CellularHandle_t cellularHandle,
 
     if( cellularStatus == CELLULAR_SUCCESS )
     {
-        cellularModuleContext_t * pSimContex = ( cellularModuleContext_t * ) pContext->pModueContext;
-        xEventGroupClearBits( pSimContex->pdnEvent, CNACT_EVENT_BIT_IND );
+        cellularModuleContext_t * pSimContext = NULL;
+
+        /* pContext is checked before. */
+        ( void ) _Cellular_GetModuleContext( pContext, ( void ** ) &pSimContext );
+
+        xEventGroupClearBits( pSimContext->pdnEvent, CNACT_EVENT_BIT_IND );
         pktStatus = _Cellular_TimeoutAtcmdRequestWithCallback( pContext, atReqSocketConnect,
                                                                SOCKET_CONNECT_PACKET_REQ_TIMEOUT_MS );
 
