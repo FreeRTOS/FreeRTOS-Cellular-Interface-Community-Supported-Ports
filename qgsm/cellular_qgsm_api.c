@@ -204,7 +204,8 @@ static bool _parseSignalQuality( char * pQcsqPayload,
     int32_t tempValue = 0;
     bool parseStatus = true;
     CellularATError_t atCoreStatus = CELLULAR_AT_SUCCESS;
-
+    bool isGsm = false;
+    
     if( ( pSignalInfo == NULL ) || ( pQcsqPayload == NULL ) )
     {
         LogError( ( "_parseSignalQuality: Invalid Input Parameters" ) );
@@ -213,7 +214,9 @@ static bool _parseSignalQuality( char * pQcsqPayload,
 
     if( ( parseStatus == true ) && ( Cellular_ATGetNextTok( &pTmpQcsqPayload, &pToken ) == CELLULAR_AT_SUCCESS ) )
     {
-        if( ( strcmp( pToken, "GSM" ) != 0 ) &&
+        isGsm = strcmp( pToken, "GSM" ) == 0;
+        
+        if( ( !isGsm ) &&
             ( strcmp( pToken, "CAT-M1" ) != 0 ) &&
             ( strcmp( pToken, "CAT-NB1" ) != 0 ) )
         {
@@ -245,7 +248,11 @@ static bool _parseSignalQuality( char * pQcsqPayload,
         parseStatus = false;
     }
 
-    if( ( parseStatus == true ) && ( Cellular_ATGetNextTok( &pTmpQcsqPayload, &pToken ) == CELLULAR_AT_SUCCESS ) )
+    if (isGsm)
+    {
+        pSignalInfo->rsrp = CELLULAR_INVALID_SIGNAL_VALUE;
+    }
+    else if( ( parseStatus == true ) && ( Cellular_ATGetNextTok( &pTmpQcsqPayload, &pToken ) == CELLULAR_AT_SUCCESS ) )
     {
         atCoreStatus = Cellular_ATStrtoi( pToken, 10, &tempValue );
 
@@ -264,7 +271,11 @@ static bool _parseSignalQuality( char * pQcsqPayload,
         parseStatus = false;
     }
 
-    if( ( parseStatus == true ) && ( Cellular_ATGetNextTok( &pTmpQcsqPayload, &pToken ) == CELLULAR_AT_SUCCESS ) )
+    if (isGsm)
+    {
+        pSignalInfo->sinr = CELLULAR_INVALID_SIGNAL_VALUE;
+    }
+    else if( ( parseStatus == true ) && ( Cellular_ATGetNextTok( &pTmpQcsqPayload, &pToken ) == CELLULAR_AT_SUCCESS ) )
     {
         atCoreStatus = Cellular_ATStrtoi( pToken, 10, &tempValue );
 
@@ -285,7 +296,11 @@ static bool _parseSignalQuality( char * pQcsqPayload,
         parseStatus = false;
     }
 
-    if( ( parseStatus == true ) && ( Cellular_ATGetNextTok( &pTmpQcsqPayload, &pToken ) == CELLULAR_AT_SUCCESS ) )
+    if (isGsm)
+    {
+        pSignalInfo->rsrq = CELLULAR_INVALID_SIGNAL_VALUE;
+    }
+    else if( ( parseStatus == true ) && ( Cellular_ATGetNextTok( &pTmpQcsqPayload, &pToken ) == CELLULAR_AT_SUCCESS ) )
     {
         atCoreStatus = Cellular_ATStrtoi( pToken, 10, &tempValue );
 
