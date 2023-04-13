@@ -226,7 +226,8 @@ static bool _parseSignalQuality( char * pQcsqPayload,
     }
 
     if( Cellular_ATGetNextTok( &pTmpQcsqPayload, &pToken ) != CELLULAR_AT_SUCCESS )
-    { /*<System Mode> */
+    {
+        /*<System Mode> */
         LogDebug( ( "_parseSignalQuality: get <System Mode> failed" ) );
         return false;
     }
@@ -239,7 +240,8 @@ static bool _parseSignalQuality( char * pQcsqPayload,
     }
 
     if( Cellular_ATGetNextTok( &pTmpQcsqPayload, &pToken ) != CELLULAR_AT_SUCCESS )
-    { /*<Operation Mode>  */
+    {
+        /* <Operation Mode> */
         LogDebug( ( "_parseSignalQuality: get <Operation Mode> failed" ) );
         return false;
     }
@@ -264,7 +266,8 @@ static bool _parseSignalQuality( char * pQcsqPayload,
     }
 
     if( Cellular_ATGetNextTok( &pTmpQcsqPayload, &pToken ) != CELLULAR_AT_SUCCESS )
-    { /*<RSRQ>    */
+    {
+        /* <RSRQ> */
         LogDebug( ( "_parseSignalQuality: get RSRQ failed" ) );
         return false;
     }
@@ -278,7 +281,8 @@ static bool _parseSignalQuality( char * pQcsqPayload,
     pSignalInfo->rsrq = ( int16_t ) tempValue;
 
     if( Cellular_ATGetNextTok( &pTmpQcsqPayload, &pToken ) != CELLULAR_AT_SUCCESS )
-    { /*<RSRP>    */
+    {
+        /* <RSRP> */
         LogDebug( ( "_parseSignalQuality: get RSRP failed" ) );
         return false;
     }
@@ -292,7 +296,8 @@ static bool _parseSignalQuality( char * pQcsqPayload,
     pSignalInfo->rsrp = ( int16_t ) tempValue;
 
     if( Cellular_ATGetNextTok( &pTmpQcsqPayload, &pToken ) != CELLULAR_AT_SUCCESS )
-    { /*<RSSI>    */
+    {
+        /* <RSSI> */
         LogDebug( ( "_parseSignalQuality: get RSSI failed" ) );
         return false;
     }
@@ -306,7 +311,8 @@ static bool _parseSignalQuality( char * pQcsqPayload,
     pSignalInfo->rssi = ( int16_t ) tempValue;
 
     if( Cellular_ATGetNextTok( &pTmpQcsqPayload, &pToken ) != CELLULAR_AT_SUCCESS )
-    { /*<RSSNR>   */
+    {
+        /* <RSSNR> */
         LogDebug( ( "_parseSignalQuality: get RSSNR failed" ) );
         return false;
     }
